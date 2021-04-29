@@ -1,14 +1,22 @@
 package api
 
 import (
-	"net/http"
-	"io/ioutil"
-	"os"
+	// "net/http"
+	// "io/ioutil"
+	// "os"
 	"fmt"
 	fiber "github.com/gofiber/fiber/v2"
+	"github.com/oldlinegames/video-api/download"
+	"github.com/oldlinegames/video-api/structs"
 )
 
+var VideoQueue *structs.VideoQueue
+
 func HostAPI() {
+	VideoQueue = &structs.VideoQueue{
+		Queue: []string{},
+	}
+
 	app := fiber.New()
 
     app.Get("/", func(c *fiber.Ctx) error {
@@ -21,43 +29,26 @@ func HostAPI() {
     app.Listen(":3000")
 }
 
+
 func upHandler(c *fiber.Ctx) error {
+	v := new(structs.VideoUpload)
+	if err := c.BodyParser(v); err != nil {
+		return err
+	}
+
+	for _, videoURL := range v.Videos {
+		title, err := download.DownloadVideo(videoURL)
+		if err != nil {
+			return err
+		}
+		VideoQueue.Mux.Lock()
+		VideoQueue.Queue = append(VideoQueue.Queue, title)
+		VideoQueue.Mux.Unlock()
+	}
+	fmt.Println(VideoQueue.Queue)
 	return nil
 }
 
 func dlHandler(c *fiber.Ctx) error {
-	return nil
-}
-
-func DownloadVideo(url string) error {
-
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		return err
-	}
-
-	req.Header.Add("user-agent", "Prometheus2.24.1")
-	req.Header.Add("accept", "application/openmetrics-text; version=0.0.1,text/plain;version=0.0.4;q=0.5,*/*;q=0.1")
-	req.Header.Add("X-Prometheus-Scrape-Timeout-Seconds", "10")
-	// req.Header.Add("Accept-Encoding", "gzip")
-
-	res, err := http.DefaultClient.Do(req)
-	
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println(string(body))
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile("test.mp4", body, 0666)
-	if err != nil {
-		return err
-	}
 	return nil
 }
