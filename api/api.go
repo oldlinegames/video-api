@@ -3,9 +3,10 @@ package api
 import (
 	// "net/http"
 	// "io/ioutil"
-	"sync"
-	"os"
 	"fmt"
+	"os"
+	"sync"
+
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/oldlinegames/video-api/download"
 	"github.com/oldlinegames/video-api/structs"
@@ -20,16 +21,15 @@ func HostAPI() {
 
 	app := fiber.New()
 
-    app.Get("/", func(c *fiber.Ctx) error {
-        return c.SendString("Getting to that bag Sheeesh")
-    })
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Getting to that bag Sheeesh")
+	})
 
 	app.Get("/download", dlHandler)
 	app.Post("/upload", upHandler)
 
-    app.Listen(":3000")
+	app.Listen(":3000")
 }
-
 
 func upHandler(c *fiber.Ctx) error {
 	v := new(structs.VideoUpload)
