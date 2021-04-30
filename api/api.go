@@ -14,6 +14,12 @@ import (
 
 var VideoQueue *structs.VideoQueue
 
+func init() {
+	if _, err := os.Stat("./saved_videos"); os.IsNotExist(err) {
+		os.Mkdir("saved_videos", 0777)
+	}
+}
+
 func HostAPI() {
 	VideoQueue = &structs.VideoQueue{
 		Queue: []string{},
@@ -34,7 +40,7 @@ func HostAPI() {
 func upHandler(c *fiber.Ctx) error {
 	v := new(structs.VideoUpload)
 	if err := c.BodyParser(v); err != nil {
-		return err
+		return c.SendString(err.Error())
 	}
 	var wg sync.WaitGroup
 	for _, videoURL := range v.Films {
@@ -43,7 +49,7 @@ func upHandler(c *fiber.Ctx) error {
 	}
 	wg.Wait()
 	fmt.Println(VideoQueue.Queue)
-	return nil
+	return c.SendString("Videos uploaded succesfully")
 }
 
 func dlHandler(c *fiber.Ctx) error {
@@ -55,12 +61,12 @@ func dlHandler(c *fiber.Ctx) error {
 	data, err := os.ReadFile(fmt.Sprintf("./saved_videos/%s", videoTitle))
 
 	if err != nil {
-		return err
+		return c.SendString(err.Error())
 	}
 
 	err = os.Remove(fmt.Sprintf("./saved_videos/%s", videoTitle))
 	if err != nil {
-		return err
+		return c.SendString(err.Error())
 	}
 	fmt.Println(VideoQueue.Queue)
 	return c.Send(data)
