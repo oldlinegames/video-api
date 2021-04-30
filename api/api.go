@@ -36,7 +36,7 @@ func upHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	for _, videoURL := range v.Videos {
+	for _, videoURL := range v.Films {
 		title, err := download.DownloadVideo(videoURL)
 		if err != nil {
 			return err
