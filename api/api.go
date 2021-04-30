@@ -55,6 +55,7 @@ func dlHandler(c *fiber.Ctx) error {
 	VideoQueue.Mux.Lock()
 
 	if len(VideoQueue.Queue) < 1 {
+		VideoQueue.Mux.Unlock()
 		return c.SendString("No videos loaded in queue")
 	}
 
