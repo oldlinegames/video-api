@@ -48,12 +48,16 @@ func upHandler(c *fiber.Ctx) error {
 		go download.DownloadVideo(videoURL, &wg, VideoQueue)
 	}
 	wg.Wait()
-	fmt.Println(VideoQueue.Queue)
 	return c.SendString("Videos uploaded succesfully")
 }
 
 func dlHandler(c *fiber.Ctx) error {
 	VideoQueue.Mux.Lock()
+
+	if len(VideoQueue.Queue) < 1 {
+		return c.SendString("No videos loaded in queue")
+	}
+
 	videoTitle := VideoQueue.Queue[0]
 	VideoQueue.Queue = VideoQueue.Queue[1:]
 	VideoQueue.Mux.Unlock()
@@ -68,6 +72,5 @@ func dlHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return c.SendString(err.Error())
 	}
-	fmt.Println(VideoQueue.Queue)
 	return c.Send(data)
 }
