@@ -12,6 +12,6 @@ type VideoQueue struct {
 }
 
 type VideoUpload struct {
-	Films []string `json:"videos"`
+	Films []string `json:"films"`
 	//this films it.
 }

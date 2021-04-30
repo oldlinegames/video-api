@@ -3,7 +3,8 @@ package api
 import (
 	// "net/http"
 	// "io/ioutil"
-	// "os"
+	"sync"
+	"os"
 	"fmt"
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/oldlinegames/video-api/download"
@@ -35,20 +36,32 @@ func upHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(v); err != nil {
 		return err
 	}
-
+	var wg sync.WaitGroup
 	for _, videoURL := range v.Films {
-		title, err := download.DownloadVideo(videoURL)
-		if err != nil {
-			return err
-		}
-		VideoQueue.Mux.Lock()
-		VideoQueue.Queue = append(VideoQueue.Queue, title)
-		VideoQueue.Mux.Unlock()
+		wg.Add(1)
+		go download.DownloadVideo(videoURL, &wg, VideoQueue)
 	}
+	wg.Wait()
 	fmt.Println(VideoQueue.Queue)
 	return nil
 }
 
 func dlHandler(c *fiber.Ctx) error {
-	return nil
+	VideoQueue.Mux.Lock()
+	videoTitle := VideoQueue.Queue[0]
+	VideoQueue.Queue = VideoQueue.Queue[1:]
+	VideoQueue.Mux.Unlock()
+	c.Append("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, videoTitle))
+	data, err := os.ReadFile(fmt.Sprintf("./saved_videos/%s", videoTitle))
+
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(fmt.Sprintf("./saved_videos/%s", videoTitle))
+	if err != nil {
+		return err
+	}
+	fmt.Println(VideoQueue.Queue)
+	return c.Send(data)
 }
